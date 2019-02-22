@@ -2,69 +2,116 @@ package ua.procamp.streams.stream;
 
 import ua.procamp.streams.function.*;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 public class AsIntStream implements IntStream {
 
+    private final List<Integer> list;
+
     private AsIntStream() {
-        // To Do
+        list = Collections.EMPTY_LIST;
+    }
+
+    private AsIntStream(List<Integer> values) {
+        this.list = values;
     }
 
     public static IntStream of(int... values) {
-        return null;
+        List<Integer> list = new LinkedList<>();
+        for (int value : values) {
+            list.add(value);
+        }
+        return new AsIntStream(list);
     }
 
     @Override
     public Double average() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Double.valueOf(sum() / list.size());
+
     }
 
     @Override
     public Integer max() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Collections.max(list);
     }
 
     @Override
     public Integer min() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Collections.min(list);
     }
 
     @Override
     public long count() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return list.size();
     }
 
     @Override
-    public Integer sum() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public long sum() {
+        long sum = 0;
+        for (Integer i : list) {
+            sum = sum + i;
+        }
+        return sum;
     }
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        List<Integer> out = new LinkedList<>();
+        for (Integer i : list) {
+            if(predicate.test(i)){
+                out.add(i);
+            }
+        }
+        return new AsIntStream(out);
     }
 
     @Override
     public void forEach(IntConsumer action) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (Integer i : list) {
+            action.accept(i);
+        }
+
     }
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        List<Integer> out = new LinkedList<>();
+        for (Integer i : list) {
+            out.add(mapper.apply(i));
+        }
+        return new AsIntStream(out);
     }
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        List<Integer> out = new LinkedList<>();
+        for (Integer i : list) {
+            for (int cell : func.applyAsIntStream(i).toArray()) {
+                out.add(cell);
+            }
+        }
+        return new AsIntStream(out);
     }
 
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int out = identity;
+        for (Integer i : list) {
+            out = op.apply(out, i);
+        }
+        return out;
     }
 
     @Override
     public int[] toArray() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int[] out = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            out[i] = list.get(i);
+        }
+        return out;
     }
 
 }

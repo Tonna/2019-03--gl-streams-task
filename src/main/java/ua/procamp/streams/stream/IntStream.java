@@ -22,7 +22,7 @@ public interface IntStream {
 
     int reduce(int identity, IntBinaryOperator op);
 
-    Integer sum();
+    long sum();
 
     int[] toArray();
 }
