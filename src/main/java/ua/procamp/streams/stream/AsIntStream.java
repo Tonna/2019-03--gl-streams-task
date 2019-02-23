@@ -2,10 +2,7 @@ package ua.procamp.streams.stream;
 
 import ua.procamp.streams.function.*;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class AsIntStream implements IntStream {
 
@@ -20,7 +17,7 @@ public class AsIntStream implements IntStream {
     }
 
     public static IntStream of(int... values) {
-        List<Integer> list = new LinkedList<>();
+        List<Integer> list = new ArrayList<>();
         for (int value : values) {
             list.add(value);
         }
@@ -49,8 +46,8 @@ public class AsIntStream implements IntStream {
     }
 
     @Override
-    public long sum() {
-        long sum = 0;
+    public int sum() {
+        int sum = 0;
         for (Integer i : list) {
             sum = sum + i;
         }
@@ -59,13 +56,15 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        List<Integer> out = new LinkedList<>();
+        int[] out = new int[list.size()];
+        int count  = 0;
         for (Integer i : list) {
             if(predicate.test(i)){
-                out.add(i);
+                out[count] = i;
+                count = count + 1;
             }
         }
-        return new AsIntStream(out);
+        return AsIntStream.of(out);
     }
 
     @Override
