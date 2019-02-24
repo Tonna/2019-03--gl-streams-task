@@ -2,66 +2,84 @@ package ua.procamp.streams.stream;
 
 import ua.procamp.streams.function.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AsIntStream implements IntStream {
 
-    private final List<Integer> list;
+    private final int[] values;
 
     private AsIntStream() {
-        list = Collections.EMPTY_LIST;
+        values = new int[0];
     }
 
-    private AsIntStream(List<Integer> values) {
-        this.list = values;
+    private AsIntStream(int[] values) {
+        if (values == null) {
+            throw new NullPointerException("null array passed");
+        }
+        if(values.length == 0){
+            throw new IllegalArgumentException("empty array passed");
+        }
+        this.values = values;
     }
 
     public static IntStream of(int... values) {
-        List<Integer> list = new ArrayList<>();
-        for (int value : values) {
-            list.add(value);
-        }
-        return new AsIntStream(list);
+        return new AsIntStream(values);
     }
 
     @Override
     public Double average() {
-        return Double.valueOf(sum() / list.size());
+        long sum = 0L;
+        for (int i = 0; i < values.length; i++) {
+            sum = sum + values[i];
+        }
+        return Double.valueOf(sum) / values.length;
 
     }
 
     @Override
     public Integer max() {
-        return Collections.max(list);
+        int max = values[0];
+        for (int i = 1; i < values.length; i++) {
+            if (values[i] > max) {
+                max = values[i];
+            }
+        }
+        return max;
     }
 
     @Override
     public Integer min() {
-        return Collections.min(list);
+        int min = values[0];
+        for (int i = 1; i < values.length; i++) {
+            if (values[i] < min) {
+                min = values[i];
+            }
+        }
+        return min;
     }
 
     @Override
     public long count() {
-        return list.size();
+        return (long) values.length;
     }
 
     @Override
     public int sum() {
         int sum = 0;
-        for (Integer i : list) {
-            sum = sum + i;
+        for (int i = 0; i < values.length; i++) {
+            sum = sum + values[i];
         }
         return sum;
     }
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        int[] out = new int[list.size()];
-        int count  = 0;
-        for (Integer i : list) {
-            if(predicate.test(i)){
-                out[count] = i;
-                count = count + 1;
+        int[] out = new int[values.length];
+        for (int i = 0; i < values.length; i++) {
+            if (predicate.test(values[i])) {
+                out[i] = values[i];
             }
         }
         return AsIntStream.of(out);
@@ -69,17 +87,17 @@ public class AsIntStream implements IntStream {
 
     @Override
     public void forEach(IntConsumer action) {
-        for (Integer i : list) {
-            action.accept(i);
+        for (int i = 0; i < values.length; i++) {
+            action.accept(values[i]);
         }
 
     }
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        List<Integer> out = new LinkedList<>();
-        for (Integer i : list) {
-            out.add(mapper.apply(i));
+        int[] out = new int[values.length];
+        for (int i = 0; i < values.length; i++) {
+            out[i] = mapper.apply(values[i]);
         }
         return new AsIntStream(out);
     }
@@ -87,30 +105,32 @@ public class AsIntStream implements IntStream {
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
         List<Integer> out = new LinkedList<>();
-        for (Integer i : list) {
-            for (int cell : func.applyAsIntStream(i).toArray()) {
+        for (int i = 0; i < values.length; i++) {
+            for (int cell : func.applyAsIntStream(values[i]).toArray()) {
                 out.add(cell);
             }
         }
-        return new AsIntStream(out);
+        out = new ArrayList<>(out);
+        int[] out2 = new int[out.size()];
+        for (int i = 0; i < out.size(); i++) {
+            out2[i] = out.get(i);
+        }
+
+        return new AsIntStream(out2);
     }
 
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
         int out = identity;
-        for (Integer i : list) {
-            out = op.apply(out, i);
+        for (int i = 0; i < values.length; i++) {
+            out = op.apply(out, values[i]);
         }
         return out;
     }
 
     @Override
     public int[] toArray() {
-        int[] out = new int[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            out[i] = list.get(i);
-        }
-        return out;
+        return values;
     }
 
 }
