@@ -30,12 +30,7 @@ public class AsIntStream implements IntStream {
 
     @Override
     public Double average() {
-        long sum = 0L;
-        for (int i = 0; i < values.length; i++) {
-            sum = sum + values[i];
-        }
-        return Double.valueOf(sum) / values.length;
-
+        return Double.valueOf(internalSum()) / values.length;
     }
 
     @Override
@@ -67,7 +62,11 @@ public class AsIntStream implements IntStream {
 
     @Override
     public int sum() {
-        int sum = 0;
+        return (int) internalSum();
+    }
+
+    public long internalSum() {
+        long sum = 0;
         for (int i = 0; i < values.length; i++) {
             sum = sum + values[i];
         }
