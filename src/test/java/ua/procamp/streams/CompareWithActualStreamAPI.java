@@ -6,6 +6,7 @@ import ua.procamp.streams.stream.AsIntStream;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -50,7 +51,8 @@ public class CompareWithActualStreamAPI {
 
     @Test
     public void testCompareAverage() {
-        assertEquals(java.util.stream.IntStream.of(array).average(), AsIntStream.of(array).average());
+        Double expected = java.util.stream.IntStream.of(array).average().getAsDouble();
+        assertEquals(expected, AsIntStream.of(array).average());
     }
 
     @Test
