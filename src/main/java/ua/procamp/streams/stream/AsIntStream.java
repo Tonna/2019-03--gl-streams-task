@@ -57,6 +57,7 @@ public class AsIntStream implements IntStream {
 
     @Override
     public long count() {
+        //FIXME: If it would be real stream, it wouldn't be limited to arrays length
         return (long) values.length;
     }
 
