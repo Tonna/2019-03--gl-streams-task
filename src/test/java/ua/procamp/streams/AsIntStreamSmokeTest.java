@@ -13,7 +13,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-public class AsIntStreamSmokeTests {
+public class AsIntStreamSmokeTest {
 
     private final int[] toArray;
     private final int sum;
@@ -28,18 +28,18 @@ public class AsIntStreamSmokeTests {
     private int reduce1;
     private int reduce2;
 
-    public AsIntStreamSmokeTests(int[] input,
-                                 double average,
-                                 int max,
-                                 int min,
-                                 long count,
-                                 int sum,
-                                 int[] toArray,
-                                 int[] map,
-                                 int[] flatMap1,
-                                 int[] flatMap2,
-                                 int reduce1,
-                                 int reduce2) {
+    public AsIntStreamSmokeTest(int[] input,
+                                double average,
+                                int max,
+                                int min,
+                                long count,
+                                int sum,
+                                int[] toArray,
+                                int[] map,
+                                int[] flatMap1,
+                                int[] flatMap2,
+                                int reduce1,
+                                int reduce2) {
         this.input = input;
         this.average = average;
         this.max = max;

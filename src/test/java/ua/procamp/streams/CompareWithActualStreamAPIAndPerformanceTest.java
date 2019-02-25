@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
-public class CompareWithActualStreamAPI {
+public class CompareWithActualStreamAPIAndPerformanceTest {
 
     private int[] array;
 
