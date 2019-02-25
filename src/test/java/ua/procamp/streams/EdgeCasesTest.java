@@ -14,48 +14,84 @@ public class EdgeCasesTest {
 
     @Before
     public void init() {
-        int[] emptyArr = {};
-        emptyStream = AsIntStream.of(emptyArr);
-        int[] arr = new int[]{1, 2, 3};
+        emptyStream = AsIntStream.of();
 
         //those streams are created to to double check
         //there might be cases when flatMap of filter
         //won't return anything
-        emptyAfterFlatMapStream = AsIntStream.of(arr)
+        emptyAfterFlatMapStream = AsIntStream.of(1, 2, 3)
                 .map(x -> x * 100500)
                 .flatMap(value -> AsIntStream.of());
 
-        emptyAfterFilter = AsIntStream.of(arr).filter(x -> x < 0);
+        emptyAfterFilter = AsIntStream.of(1, 2, 3).filter(x -> x < 0);
 
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void checkNullInputCausesExceptionTest(){
+        AsIntStream.of(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void maxEmptyStreamTest() {
         emptyStream.max();
-        emptyAfterFlatMapStream.max();
-        emptyAfterFilter.max();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void minEmptyStreamTest() {
         emptyStream.min();
-        emptyAfterFlatMapStream.min();
-        emptyAfterFilter.min();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void averageEmptyStreamTest() {
         emptyStream.average();
-        emptyAfterFlatMapStream.average();
-        emptyAfterFilter.average();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void sumEmptyStreamTest() {
         emptyStream.sum();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void maxEmptyAfterFlatMapStreamTest() {
+        emptyAfterFlatMapStream.max();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void minEmptyAfterFlatMapStreamTest() {
+        emptyAfterFlatMapStream.min();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void averageEmptyAfterFlatMapStreamTest() {
+        emptyAfterFlatMapStream.average();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void sumEmptyAfterFlatMapStreamTest() {
         emptyAfterFlatMapStream.sum();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void maxEmptyAfterFilterStreamTest() {
+        emptyAfterFilter.max();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void minEmptyAfterFilterStreamTest() {
+        emptyAfterFilter.min();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void averageEmptyAfterFilterStreamTest() {
+        emptyAfterFilter.average();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void sumEmptyAfterFilterStreamTest() {
         emptyAfterFilter.sum();
     }
+
 
     //This requirement wasn't present in original task
     //but this is how real StreamAPI works
@@ -71,5 +107,12 @@ public class EdgeCasesTest {
         stream.map(x -> x * 25).sum();
         //should cause exception?
         stream.map(x -> x * 25);
-    }*/
+    }
+
+
+    @Test(expected = IllegalStateException.class)
+    public void nonTerminatingOperationOnUsedStreamTest() {
+        emptyAfterFilter.filter(x -> x > 0);
+    }
+    */
 }
