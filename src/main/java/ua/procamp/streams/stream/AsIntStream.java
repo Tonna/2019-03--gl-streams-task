@@ -9,10 +9,11 @@ import java.util.List;
 public class AsIntStream implements IntStream {
 
     private final int[] values;
-    private boolean terminated = false;
+    private List<Function> functions = new ArrayList<>();
 
     private AsIntStream() {
         values = new int[0];
+        functions = new ArrayList<>();
     }
 
     private AsIntStream(int[] values) {
@@ -22,6 +23,11 @@ public class AsIntStream implements IntStream {
         this.values = values;
     }
 
+    private AsIntStream(int[] values, List<Function> functions) {
+        this(values);
+        this.functions = functions;
+    }
+
     public static IntStream of(int... values) {
         return new AsIntStream(values);
     }
@@ -29,149 +35,188 @@ public class AsIntStream implements IntStream {
     @Override
     public Double average() {
         checkIsEmpty();
-        terminateStream();
         return Double.valueOf(internalSum()) / values.length;
     }
 
     @Override
     public Integer max() {
         checkIsEmpty();
+        int[] values = applyAll();
         int max = values[0];
         for (int i = 1; i < values.length; i++) {
             if (values[i] > max) {
                 max = values[i];
             }
         }
-        terminateStream();
         return max;
     }
 
     @Override
     public Integer min() {
         checkIsEmpty();
+        int[] values = applyAll();
         int min = values[0];
         for (int i = 1; i < values.length; i++) {
             if (values[i] < min) {
                 min = values[i];
             }
         }
-        terminateStream();
         return min;
     }
 
     @Override
     public long count() {
-        terminateStream();
-        //FIXME: If it would be real stream, it wouldn't be limited to arrays length
-        return (long) values.length;
+        //FIXME: If it would be real stream, it wouldn't be limited to arrays length (max integer)?
+        return (long) applyAll().length;
     }
 
     @Override
     public int sum() {
         checkIsEmpty();
-        terminateStream();
         return (int) internalSum();
     }
 
     public long internalSum() {
         long sum = 0;
-        for (int i = 0; i < values.length; i++) {
-            sum = sum + values[i];
+        int[] processed = applyAll();
+        for (int i = 0; i < processed.length; i++) {
+            sum = sum + processed[i];
         }
         return sum;
     }
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        int[] intermediate = new int[values.length];
-        boolean[] isValidArr = new boolean[values.length];
-        for (int i = 0; i < values.length; i++) {
-            if (predicate.test(values[i])) {
-                intermediate[i] = values[i];
-                isValidArr[i] = true;
-            }
-        }
-        int numOfValid = 0;
-        for (boolean valid : isValidArr) {
-            if (valid) {
-                numOfValid++;
-            }
-        }
-        if (numOfValid > 0) {
-            int[] out = new int[numOfValid];
-            int insertCount = 0;
-            for (int i = 0; i < values.length; i++) {
-                if(isValidArr[i]){
-                    out[insertCount] = intermediate[i];
-                    insertCount = insertCount + 1;
+        Function function = new Function() {
+            @Override
+            public int[] apply(int[] values2) {
+                int[] intermediate2 = new int[values2.length];
+                boolean[] isValidArr2 = new boolean[values2.length];
+                for (int i = 0; i < values2.length; i++) {
+                    if (predicate.test(values2[i])) {
+                        intermediate2[i] = values2[i];
+                        isValidArr2[i] = true;
+                    }
                 }
+                int numOfValid2 = 0;
+                for (boolean valid : isValidArr2) {
+                    if (valid) {
+                        numOfValid2++;
+                    }
+                }
+                if (numOfValid2 > 0) {
+                    int[] out2 = new int[numOfValid2];
+                    int insertCount2 = 0;
+                    for (int i = 0; i < values2.length; i++) {
+                        if (isValidArr2[i]) {
+                            out2[insertCount2] = intermediate2[i];
+                            insertCount2 = insertCount2 + 1;
+                        }
+                    }
+                    return out2;
+                }
+                return new int[]{};
+
             }
-
-            return AsIntStream.of(out);
-        }
-        return new AsIntStream();
-
+        };
+        functions.add(function);
+        return new AsIntStream(values, functions);
     }
 
     @Override
     public void forEach(IntConsumer action) {
+        int[] values = applyAll();
         for (int i = 0; i < values.length; i++) {
             action.accept(values[i]);
         }
-        terminateStream();
     }
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        int[] out = new int[values.length];
+        Function function = new Function() {
+            @Override
+            public int[] apply(int[] values2) {
+                int[] out2 = new int[values2.length];
+                for (int i = 0; i < values2.length; i++) {
+                    out2[i] = mapper.apply(values2[i]);
+                }
+                return out2;
+            }
+        };
+        functions.add(function);
+        return new AsIntStream(values, functions);
+    }
+
+    private int[] applyAll() {
+        int funSize = functions.size();
+        List<Integer> out = new LinkedList<>();
         for (int i = 0; i < values.length; i++) {
-            out[i] = mapper.apply(values[i]);
+            int[] target = new int[]{values[i]};
+            for (int j = 0; j < funSize; j++) {
+                target = functions.get(j).apply(target);
+            }
+            for (int k = 0; k < target.length; k++) {
+                out.add(target[k]);
+            }
         }
-        return new AsIntStream(out);
+        return listToArray(out);
     }
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
-        List<Integer> out = new LinkedList<>();
-        for (int i = 0; i < values.length; i++) {
-            for (int cell : func.applyAsIntStream(values[i]).toArray()) {
-                out.add(cell);
-            }
-        }
-        out = new ArrayList<>(out);
-        int[] out2 = new int[out.size()];
-        for (int i = 0; i < out.size(); i++) {
-            out2[i] = out.get(i);
-        }
 
-        return new AsIntStream(out2);
+        Function function = new Function() {
+            @Override
+            public int[] apply(int[] values3) {
+                List<Integer> out4 = new LinkedList<>();
+
+                for (int i = 0; i < values3.length; i++) {
+                    for (int cell : func.applyAsIntStream(values3[i]).toArray()) {
+                        out4.add(cell);
+                    }
+                }
+                out4 = new ArrayList<>(out4);
+                int[] out5 = listToArray(out4);
+                return out5;
+            }
+        };
+        functions.add(function);
+        return new AsIntStream(values, functions);
+    }
+
+    private int[] listToArray(List<Integer> list) {
+        int[] out = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            out[i] = list.get(i);
+        }
+        return out;
     }
 
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
         int out = identity;
+        int[] values = applyAll();
         for (int i = 0; i < values.length; i++) {
             out = op.apply(out, values[i]);
         }
-        terminateStream();
         return out;
     }
 
     @Override
     public int[] toArray() {
-        terminateStream();
-        return values;
+        return applyAll();
     }
 
-
     private void checkIsEmpty() {
-        if (values.length == 0) {
+        //FIXME redundant call. Cache or do something.
+        if (applyAll().length == 0) {
             throw new IllegalArgumentException("stream is empty");
         }
     }
 
-    private void terminateStream() {
-        this.terminated = true;
+
+    private interface Function {
+        int[] apply(int[] values);
     }
 
 }

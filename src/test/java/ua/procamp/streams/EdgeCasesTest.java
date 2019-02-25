@@ -28,7 +28,7 @@ public class EdgeCasesTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void checkNullInputCausesExceptionTest(){
+    public void checkNullInputCausesExceptionTest() {
         AsIntStream.of(null);
     }
 

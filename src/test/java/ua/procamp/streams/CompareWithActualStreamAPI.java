@@ -17,7 +17,7 @@ public class CompareWithActualStreamAPI {
 
     @Before
     public void init() {
-        int bigInt = 200000;
+        int bigInt = 2000;
         int[] values = new int[bigInt];
         for (int i = 0; i < bigInt; i++) {
             values[i] = i;
@@ -80,7 +80,7 @@ public class CompareWithActualStreamAPI {
     public void testStreamSum() {
         System.out.println("streamSum");
         //int bigInt = 20000000;
-        int bigInt = 200000;
+        int bigInt = 2000;
         int[] values = new int[bigInt];
         for (int i = 0; i < bigInt; i++) {
             values[i] = i;
