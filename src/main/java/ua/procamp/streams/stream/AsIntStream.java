@@ -3,29 +3,31 @@ package ua.procamp.streams.stream;
 import ua.procamp.streams.function.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 public class AsIntStream implements IntStream {
 
+    //TODO investigate and make sure
+    // 1. there are no extra objects created
+    // 2. using same stream multiple times won't cause troubles
     private final int[] values;
     private List<Function> functions = new ArrayList<>();
 
-    private AsIntStream() {
-        values = new int[0];
-        functions = new ArrayList<>();
-    }
-
     private AsIntStream(int[] values) {
+        //original StreamAPI throws NPE in case if null passed
         if (values == null) {
             throw new NullPointerException("null value passed");
         }
-        this.values = values;
+        //Making copy of array just in case
+        this.values = Arrays.copyOf(values, values.length);
     }
 
     private AsIntStream(int[] values, List<Function> functions) {
         this(values);
-        this.functions = functions;
+        //Making copy of list just in case
+        this.functions = new ArrayList<>(functions);
     }
 
     public static IntStream of(int... values) {
@@ -34,18 +36,24 @@ public class AsIntStream implements IntStream {
 
     @Override
     public Double average() {
-        checkIsEmpty();
-        return Double.valueOf(internalSum()) / values.length;
+        int[] processed = applyAll();
+        checkIsEmpty(processed);
+        long sum = 0;
+        for (int i = 0; i < processed.length; i++) {
+            sum = sum + processed[i];
+        }
+        return Double.valueOf(sum) / processed.length;
     }
 
     @Override
     public Integer max() {
-        checkIsEmpty();
-        int[] values = applyAll();
-        int max = values[0];
-        for (int i = 1; i < values.length; i++) {
-            if (values[i] > max) {
-                max = values[i];
+
+        int[] processed = applyAll();
+        checkIsEmpty(processed);
+        int max = processed[0];
+        for (int i = 1; i < processed.length; i++) {
+            if (processed[i] > max) {
+                max = processed[i];
             }
         }
         return max;
@@ -53,12 +61,12 @@ public class AsIntStream implements IntStream {
 
     @Override
     public Integer min() {
-        checkIsEmpty();
-        int[] values = applyAll();
-        int min = values[0];
-        for (int i = 1; i < values.length; i++) {
-            if (values[i] < min) {
-                min = values[i];
+        int[] processed = applyAll();
+        checkIsEmpty(processed);
+        int min = processed[0];
+        for (int i = 1; i < processed.length; i++) {
+            if (processed[i] < min) {
+                min = processed[i];
             }
         }
         return min;
@@ -66,60 +74,63 @@ public class AsIntStream implements IntStream {
 
     @Override
     public long count() {
-        //FIXME: If it would be real stream, it wouldn't be limited to arrays length (max integer)?
+        //FIXME: If it would be real stream,
+        // it wouldn't be limited to arrays length (max integer)?
         return (long) applyAll().length;
     }
 
     @Override
     public int sum() {
-        checkIsEmpty();
-        return (int) internalSum();
-    }
-
-    public long internalSum() {
-        long sum = 0;
         int[] processed = applyAll();
+        checkIsEmpty(processed);
+        long sum = 0;
         for (int i = 0; i < processed.length; i++) {
             sum = sum + processed[i];
         }
-        return sum;
+        return (int) sum;
     }
 
     @Override
     public IntStream filter(IntPredicate predicate) {
-        Function function = new Function() {
-            @Override
-            public int[] apply(int[] values2) {
-                int[] intermediate2 = new int[values2.length];
-                boolean[] isValidArr2 = new boolean[values2.length];
-                for (int i = 0; i < values2.length; i++) {
-                    if (predicate.test(values2[i])) {
-                        intermediate2[i] = values2[i];
-                        isValidArr2[i] = true;
-                    }
+        functions.add(values -> {
+            //TODO replace arrays with LinkedList if it won't hurt performance?
+            int[] intermediate = new int[values.length];
+            //using the array we track position of values
+            // that weren't filtered out, i.e. passed validation
+            boolean[] isValidArr = new boolean[values.length];
+            for (int i = 0; i < values.length; i++) {
+                if (predicate.test(values[i])) {
+                    intermediate[i] = values[i];
+                    isValidArr[i] = true;
                 }
-                int numOfValid2 = 0;
-                for (boolean valid : isValidArr2) {
-                    if (valid) {
-                        numOfValid2++;
-                    }
-                }
-                if (numOfValid2 > 0) {
-                    int[] out2 = new int[numOfValid2];
-                    int insertCount2 = 0;
-                    for (int i = 0; i < values2.length; i++) {
-                        if (isValidArr2[i]) {
-                            out2[insertCount2] = intermediate2[i];
-                            insertCount2 = insertCount2 + 1;
-                        }
-                    }
-                    return out2;
-                }
-                return new int[]{};
-
             }
-        };
-        functions.add(function);
+            //count how many values passed
+            // and how big array for output should be
+            int numOfValid = 0;
+            for (boolean valid : isValidArr) {
+                if (valid) {
+                    numOfValid = numOfValid + 1;
+                }
+            }
+            if (numOfValid > 0) {
+                int[] out = new int[numOfValid];
+                //iterate over array containing both
+                //valid and non-initialized zero values
+                //put only valid to output array
+                int insertCount = 0;
+                for (int i = 0; i < values.length; i++) {
+                    if (isValidArr[i]) {
+                        out[insertCount] = intermediate[i];
+                        insertCount = insertCount + 1;
+                    }
+                }
+                return out;
+            } else {
+                //all values were filtered out - return nothing
+                return new int[]{};
+            }
+
+        });
         return new AsIntStream(values, functions);
     }
 
@@ -133,63 +144,60 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        Function function = new Function() {
-            @Override
-            public int[] apply(int[] values2) {
-                int[] out2 = new int[values2.length];
-                for (int i = 0; i < values2.length; i++) {
-                    out2[i] = mapper.apply(values2[i]);
-                }
-                return out2;
+        functions.add(values2 -> {
+            int[] out2 = new int[values2.length];
+            for (int i = 0; i < values2.length; i++) {
+                out2[i] = mapper.apply(values2[i]);
             }
-        };
-        functions.add(function);
+            return out2;
+        });
         return new AsIntStream(values, functions);
     }
 
     private int[] applyAll() {
+        //how many functions we have to apply in total
         int funSize = functions.size();
+
+        //container for results of all function calls
+        //TODO somehow know the common sizes of all
+        // returned variables and use array instead of list?
+        // Will it benefit performance significantly
         List<Integer> out = new LinkedList<>();
+
+        //Iterating over each value of initial input
         for (int i = 0; i < values.length; i++) {
             int[] target = new int[]{values[i]};
+            //Iterating over stored functions
+            //and applying to each value
             for (int j = 0; j < funSize; j++) {
                 target = functions.get(j).apply(target);
             }
+            //storing every result from function
+            //to container with all results
             for (int k = 0; k < target.length; k++) {
                 out.add(target[k]);
             }
         }
+        //convert list to array
         return listToArray(out);
     }
 
     @Override
     public IntStream flatMap(IntToIntStreamFunction func) {
+        functions.add(values -> {
 
-        Function function = new Function() {
-            @Override
-            public int[] apply(int[] values3) {
-                List<Integer> out4 = new LinkedList<>();
+            //TODO Optimize by making further calls functional also?
+            List<Integer> out = new LinkedList<>();
 
-                for (int i = 0; i < values3.length; i++) {
-                    for (int cell : func.applyAsIntStream(values3[i]).toArray()) {
-                        out4.add(cell);
-                    }
+            for (int i = 0; i < values.length; i++) {
+                for (int cell : func.applyAsIntStream(values[i]).toArray()) {
+                    out.add(cell);
                 }
-                out4 = new ArrayList<>(out4);
-                int[] out5 = listToArray(out4);
-                return out5;
             }
-        };
-        functions.add(function);
+            out = new ArrayList<>(out);
+            return listToArray(out);
+        });
         return new AsIntStream(values, functions);
-    }
-
-    private int[] listToArray(List<Integer> list) {
-        int[] out = new int[list.size()];
-        for (int i = 0; i < list.size(); i++) {
-            out[i] = list.get(i);
-        }
-        return out;
     }
 
     @Override
@@ -207,13 +215,19 @@ public class AsIntStream implements IntStream {
         return applyAll();
     }
 
-    private void checkIsEmpty() {
-        //FIXME redundant call. Cache or do something.
-        if (applyAll().length == 0) {
+    private int[] listToArray(List<Integer> list) {
+        int[] out = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            out[i] = list.get(i);
+        }
+        return out;
+    }
+
+    private void checkIsEmpty(int[] array) {
+        if (array.length == 0) {
             throw new IllegalArgumentException("stream is empty");
         }
     }
-
 
     private interface Function {
         int[] apply(int[] values);

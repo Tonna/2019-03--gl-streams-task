@@ -93,12 +93,12 @@ public class EdgeCasesTest {
     }
 
 
-    //This requirement wasn't present in original task
-    //but this is how real StreamAPI works
     /*
-      Nevermind. Current implementation creates new stream
-      each time non-terminating method is called. Passing state
-      between streams isn't an option.
+       This requirement wasn't present in original task
+       but this is how real StreamAPI works
+       Current implementation creates new stream
+       each time non-terminating method is called. Passing state
+       between streams isn't an option.
     */
     /*
     @Test(expected = IllegalStateException.class)
@@ -108,7 +108,6 @@ public class EdgeCasesTest {
         //should cause exception?
         stream.map(x -> x * 25);
     }
-
 
     @Test(expected = IllegalStateException.class)
     public void nonTerminatingOperationOnUsedStreamTest() {
