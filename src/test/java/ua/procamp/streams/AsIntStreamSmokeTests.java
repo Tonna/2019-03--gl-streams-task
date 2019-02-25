@@ -84,7 +84,7 @@ public class AsIntStreamSmokeTests {
                         -6
                 },
                 //this case is overflow handling
-                {new int[]{2000000035, 2000000331}, 2000000183.0, 2000000331, 2000000035, 2, -294966930, new int[]{2000000035, 2000000331}, new int[]{1705032795,1705033683}, new int[]{2000000034, 2000000036, 2000000330, 2000000332}, new int[]{2000000034, 22, 2000000038, 2000000330, 22, 2000000334}, -294966915, 294966930},
+                {new int[]{2000000035, 2000000331}, 2000000183.0, 2000000331, 2000000035, 2, -294966930, new int[]{2000000035, 2000000331}, new int[]{1705032795, 1705033683}, new int[]{2000000034, 2000000036, 2000000330, 2000000332}, new int[]{2000000034, 22, 2000000038, 2000000330, 22, 2000000334}, -294966915, 294966930},
 
 
                 //Generated test data
@@ -152,14 +152,14 @@ public class AsIntStreamSmokeTests {
         int theAnswer = 42;
         List<String> expected = new LinkedList<>();
         for (int i : input) {
-            expected.add(String.format("%d = %d ? - %s", theAnswer,i, (theAnswer == i)));
+            expected.add(String.format("%d = %d ? - %s", theAnswer, i, (theAnswer == i)));
         }
         assertEquals(expected, list);
     }
 
     @Test
-    public void testMap(){
-        assertArrayEquals(map, AsIntStream.of(input).map(x -> (x*3) -14).toArray());
+    public void testMap() {
+        assertArrayEquals(map, AsIntStream.of(input).map(x -> (x * 3) - 14).toArray());
     }
 
     @Test

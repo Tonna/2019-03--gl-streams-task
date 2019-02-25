@@ -18,7 +18,7 @@ public class AsIntStream implements IntStream {
         if (values == null) {
             throw new NullPointerException("null array passed");
         }
-        if(values.length == 0){
+        if (values.length == 0) {
             throw new IllegalArgumentException("empty array passed");
         }
         this.values = values;

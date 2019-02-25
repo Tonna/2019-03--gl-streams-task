@@ -9,7 +9,7 @@ public interface IntStream {
     Integer max();
 
     Integer min();
-    
+
     IntStream flatMap(IntToIntStreamFunction func);
 
     long count();

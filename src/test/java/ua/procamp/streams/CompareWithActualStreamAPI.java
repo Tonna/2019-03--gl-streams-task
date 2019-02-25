@@ -6,7 +6,6 @@ import ua.procamp.streams.stream.AsIntStream;
 
 import java.util.Date;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;

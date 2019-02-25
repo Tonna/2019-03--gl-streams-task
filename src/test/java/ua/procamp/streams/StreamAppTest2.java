@@ -1,14 +1,14 @@
 package ua.procamp.streams;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Before;
+import org.junit.Test;
 import ua.procamp.streams.stream.AsIntStream;
 import ua.procamp.streams.stream.IntStream;
 
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class StreamAppTest2 {
 
@@ -48,7 +48,7 @@ public class StreamAppTest2 {
     public void testStreamSum() {
         System.out.println("streamSum");
         //int bigInt = 20000000;
-        int bigInt =   200000;
+        int bigInt = 200000;
         int[] values = new int[bigInt];
         for (int i = 0; i < bigInt; i++) {
             values[i] = i;
