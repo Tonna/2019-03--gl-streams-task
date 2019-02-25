@@ -1,53 +1,75 @@
 package ua.procamp.streams;
 
+
 import org.junit.Before;
 import org.junit.Test;
 import ua.procamp.streams.stream.AsIntStream;
 import ua.procamp.streams.stream.IntStream;
 
-import java.util.Date;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
 public class EdgeCasesTest {
 
-    private IntStream intStream;
+    private IntStream emptyStream;
+    private IntStream emptyAfterFlatMapStream;
+    private IntStream emptyAfterFilter;
 
-    @Test
-    public void testStreamForEach() {
-        System.out.println("streamForEach");
-        String expResult = "-10123wrong";
-        String result = StreamApp.streamForEach(intStream);
-        assertEquals(expResult, result);
-    }
+    @Before
+    public void init() {
+        int[] emptyArr = {};
+        emptyStream = AsIntStream.of(emptyArr);
+        int[] arr = new int[]{1, 2, 3};
 
-    @Test
-    public void testStreamSum() {
-        System.out.println("streamSum");
-        //int bigInt = 20000000;
-        int bigInt =   200000;
-        int[] values = new int[bigInt];
-        for (int i = 0; i < bigInt; i++) {
-            values[i] = i;
-        }
-        long expResult = 2000000001000000000L;
-        long start1 = new Date().getTime();
-        long result = StreamApp.streamOperations(AsIntStream.of(values));
-        long start2 = new Date().getTime();
-        //assertEquals(expResult, result);
+        //those streams are created to to double check
+        //there might be cases when flatMap of filter
+        //won't return anything
+        emptyAfterFlatMapStream = AsIntStream.of(arr)
+                .map(x -> x * 100500)
+                .flatMap(value -> AsIntStream.of());
 
-        long start3 = new Date().getTime();
-        int c = java.util.stream.IntStream.of(values)
-                .filter(x -> x > 0) // 1, 2, 3
-                .map(x -> x * x) // 1, 4, 9
-                .flatMap(x -> java.util.stream.IntStream.of(x - 1, x, x + 1)) // 0, 1, 2, 3, 4, 5, 8, 9, 10
-                .reduce(0, (a, b) -> a + b); // 42
-        long start4 = new Date().getTime();
-        System.out.println(result + " " + (start2 - start1));
-        System.out.println(c + " " + (start4 - start3));
+        emptyAfterFilter = AsIntStream.of(arr).filter(x -> x < 0);
 
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void maxEmptyStreamTest() {
+        emptyStream.max();
+        emptyAfterFlatMapStream.max();
+        emptyAfterFilter.max();
+    }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void minEmptyStreamTest() {
+        emptyStream.min();
+        emptyAfterFlatMapStream.min();
+        emptyAfterFilter.min();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void averageEmptyStreamTest() {
+        emptyStream.average();
+        emptyAfterFlatMapStream.average();
+        emptyAfterFilter.average();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void sumEmptyStreamTest() {
+        emptyStream.sum();
+        emptyAfterFlatMapStream.sum();
+        emptyAfterFilter.sum();
+    }
+
+    //This requirement wasn't present in original task
+    //but this is how real StreamAPI works
+    /*
+      Nevermind. Current implementation creates new stream
+      each time non-terminating method is called. Passing state
+      between streams isn't an option.
+    */
+    /*
+    @Test(expected = IllegalStateException.class)
+    public void streamCannotBeUsedMoreThanOnceTest() {
+        IntStream stream = AsIntStream.of(1, 2, 3);
+        stream.map(x -> x * 25).sum();
+        //should cause exception?
+        stream.map(x -> x * 25);
+    }*/
 }
