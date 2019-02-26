@@ -15,7 +15,7 @@ public class CompareWithActualStreamAPIAndPerformanceTest {
 
     @Before
     public void init() {
-        int bigInt = 20000;
+        int bigInt = 1900000;
         int[] values = new int[bigInt];
         for (int i = 0; i < bigInt; i++) {
             values[i] = i;

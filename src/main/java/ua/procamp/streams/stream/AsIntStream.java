@@ -144,12 +144,12 @@ public class AsIntStream implements IntStream {
 
     @Override
     public IntStream map(IntUnaryOperator mapper) {
-        functions.add(values2 -> {
-            int[] out2 = new int[values2.length];
-            for (int i = 0; i < values2.length; i++) {
-                out2[i] = mapper.apply(values2[i]);
+        functions.add(values -> {
+            int[] out = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                out[i] = mapper.apply(values[i]);
             }
-            return out2;
+            return out;
         });
         return new AsIntStream(values, functions);
     }
@@ -162,8 +162,8 @@ public class AsIntStream implements IntStream {
         //TODO somehow know the common sizes of all
         // returned variables and use array instead of list?
         // Will it benefit performance significantly
-        List<Integer> out = new LinkedList<>();
-
+        int[] out = new int[getMaxSize()];
+        int count = 0;
         //Iterating over each value of initial input
         for (int i = 0; i < values.length; i++) {
             int[] target = new int[]{values[i]};
@@ -171,15 +171,28 @@ public class AsIntStream implements IntStream {
             //and applying to each value
             for (int j = 0; j < funSize; j++) {
                 target = functions.get(j).apply(target);
+                if(target.length == 0){
+                    break;
+                }
             }
             //storing every result from function
             //to container with all results
             for (int k = 0; k < target.length; k++) {
-                out.add(target[k]);
+                out[k + count] = target[k];
+                count = count + 1;
             }
         }
         //convert list to array
-        return listToArray(out);
+        return Arrays.copyOfRange(out,0,count);
+    }
+
+    private int getMaxSize() {
+        int count = 1;
+        for (Function f : functions) {
+            int l = f.apply(new int[]{0}).length;
+            count = l == 0 ? 1 : l;
+        }
+        return (count * values.length) + 2;
     }
 
     @Override
