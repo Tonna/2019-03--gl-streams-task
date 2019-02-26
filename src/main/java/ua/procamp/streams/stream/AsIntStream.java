@@ -104,34 +104,38 @@ public class AsIntStream implements IntStream {
                     isValidArr[i] = true;
                 }
             }
-            //count how many values passed
-            // and how big array for output should be
-            int numOfValid = 0;
-            for (boolean valid : isValidArr) {
-                if (valid) {
-                    numOfValid = numOfValid + 1;
-                }
-            }
-            if (numOfValid > 0) {
-                int[] out = new int[numOfValid];
-                //iterate over array containing both
-                //valid and non-initialized zero values
-                //put only valid to output array
-                int insertCount = 0;
-                for (int i = 0; i < values.length; i++) {
-                    if (isValidArr[i]) {
-                        out[insertCount] = intermediate[i];
-                        insertCount = insertCount + 1;
-                    }
-                }
-                return out;
-            } else {
-                //all values were filtered out - return nothing
-                return new int[]{};
-            }
+            return getValidValues(intermediate, isValidArr);
 
         });
         return new AsIntStream(values, functions);
+    }
+
+    private int[] getValidValues(int[] intermediate, boolean[] isValidArr) {
+        //count how many values passed
+        // and how big array for output should be
+        int numOfValid = 0;
+        for (boolean valid : isValidArr) {
+            if (valid) {
+                numOfValid = numOfValid + 1;
+            }
+        }
+        if (numOfValid > 0) {
+            int[] out = new int[numOfValid];
+            //iterate over array containing both
+            //valid and non-initialized zero values
+            //put only valid to output array
+            int insertCount = 0;
+            for (int i = 0; i < intermediate.length; i++) {
+                if (isValidArr[i]) {
+                    out[insertCount] = intermediate[i];
+                    insertCount = insertCount + 1;
+                }
+            }
+            return out;
+        } else {
+            //all values were filtered out - return nothing
+            return new int[]{};
+        }
     }
 
     @Override
@@ -159,10 +163,8 @@ public class AsIntStream implements IntStream {
         int funSize = functions.size();
 
         //container for results of all function calls
-        //TODO somehow know the common sizes of all
-        // returned variables and use array instead of list?
-        // Will it benefit performance significantly
-        int[] out = new int[getMaxSize()];
+        // get estimated total size of all returned array
+        int[] out = new int[getMaxStreamSize()];
         int count = 0;
         //Iterating over each value of initial input
         for (int i = 0; i < values.length; i++) {
@@ -171,28 +173,19 @@ public class AsIntStream implements IntStream {
             //and applying to each value
             for (int j = 0; j < funSize; j++) {
                 target = functions.get(j).apply(target);
-                if(target.length == 0){
+                if (target.length == 0) {
                     break;
                 }
             }
             //storing every result from function
-            //to container with all results
+            //to array with all results
             for (int k = 0; k < target.length; k++) {
                 out[k + count] = target[k];
-                count = count + 1;
             }
+            count = count + target.length;
         }
-        //convert list to array
-        return Arrays.copyOfRange(out,0,count);
-    }
-
-    private int getMaxSize() {
-        int count = 1;
-        for (Function f : functions) {
-            int l = f.apply(new int[]{0}).length;
-            count = l == 0 ? 1 : l;
-        }
-        return (count * values.length) + 2;
+        //returned only filled part of array
+        return Arrays.copyOfRange(out, 0, count);
     }
 
     @Override
@@ -226,6 +219,34 @@ public class AsIntStream implements IntStream {
     @Override
     public int[] toArray() {
         return applyAll();
+    }
+
+    /*
+      here we are estimating total length of arrays
+      returned by all functions
+      This is answer to the questions:
+      - how many values will be filtered out?
+      - how big array flatMap returns?
+
+      We get answer to them by having dry run of stored functions.
+      We cannot say minimal number of values coming from Stream
+      but we can tell maximum number
+    */
+    private int getMaxStreamSize() {
+        //default value
+        int totalLength = 1;
+        //dry run of functions chain
+        for (Function f : functions) {
+            int length = f.apply(new int[]{0}).length;
+            //if not everything is filtered out
+            if (length != 0) {
+                //multiplication if used to handle multiple flatMaps
+                totalLength = length * totalLength;
+            }
+        }
+        //from single int chain of functions produces multiple ints
+        //that is multiplied on input size
+        return totalLength * values.length;
     }
 
     private int[] listToArray(List<Integer> list) {
